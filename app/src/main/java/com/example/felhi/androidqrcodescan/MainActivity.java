@@ -10,11 +10,14 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Vibrator;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -46,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private BarcodeDetector barcodeDetector;
     CameraSource cameraSource;
     private static final int REQUEST_CAMERA_PERMISSION = 20;
+    private Button photoButton;
 
 
     @Override
@@ -53,23 +57,16 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        photoButton = findViewById(R.id.photo_btn);
         scanResults = (TextView) findViewById(R.id.scan_results);
         cameraPreview = findViewById(R.id.image);
-        barcodeDetector = new BarcodeDetector.Builder(this).setBarcodeFormats(Barcode.QR_CODE).build();
+        barcodeDetector = new BarcodeDetector.Builder(this).setBarcodeFormats(Barcode.QR_CODE | Barcode.CODE_128).build();
         cameraSource = new CameraSource.Builder(this, barcodeDetector).setRequestedPreviewSize(640, 480).build();
 
         cameraPreview.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                try {
-                    if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
-                        return;
-                    }
-                    cameraSource.start(cameraPreview.getHolder());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
             }
 
             @Override
@@ -82,7 +79,6 @@ public class MainActivity extends AppCompatActivity {
                 cameraSource.stop();
             }
         });
-
         barcodeDetector.setProcessor(new Detector.Processor<Barcode>() {
             @Override
             public void release() {
@@ -91,12 +87,12 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void receiveDetections(Detector.Detections<Barcode> detections) {
-                final SparseArray<Barcode> qrcodes=detections.getDetectedItems();
-                if (qrcodes.size()!=0){
+                final SparseArray<Barcode> qrcodes = detections.getDetectedItems();
+                if (qrcodes.size() != 0) {
                     scanResults.post(new Runnable() {
                         @Override
                         public void run() {
-                            Vibrator vibrator= (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+                            Vibrator vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                             vibrator.vibrate(100);
                             scanResults.setText(qrcodes.valueAt(0).displayValue);
 
@@ -105,6 +101,23 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+
+        photoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+                        return;
+                    }
+                    cameraSource.start(cameraPreview.getHolder());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
     }
 
 
