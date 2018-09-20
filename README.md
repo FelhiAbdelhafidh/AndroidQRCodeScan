@@ -1,0 +1,2 @@
+# AndroidQRCodeScan
+read QR Code
